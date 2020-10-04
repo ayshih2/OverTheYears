@@ -6,6 +6,7 @@ import json
 import os
 
 DISCOGRAPHY_FILE_NAME = 'bts_songs.json'
+ALBUMS_TO_EXCLUDE = ['Skool Luv Affair (Special Edition)', 'Wake Up (Standard Edition)', 'Youth', 'FACE YOURSELF', 'MAP OF THE SOUL : 7 ~ THE JOURNEY ~']
 
 """
 Gets all of an artists' songs and other data (audio features, associated album info) using Spotify's API and stores JSON result
@@ -13,7 +14,7 @@ in a file. Must register at Spotify for Developers first for it to work properly
 Used following article as a starting point: https://stmorse.github.io/journal/spotify-api.html
 """
 def get_data():
-    # (1) GET ACCESS TOKEN
+    # (1) SET UP CLIENT & GET ACCESS TOKEN
     AUTH_URL = 'https://accounts.spotify.com/api/token'
     client_id = os.environ.get('CLIENT_ID')
     client_secret = os.environ.get('CLIENT_SECRET')
@@ -30,12 +31,15 @@ def get_data():
     auth_response_data = auth_response.json()
     access_token = auth_response_data['access_token']
 
+    # Setup client for Microsoft Azure's Text Analytics library
+    text_analytics_client = authenticate_client()
+
     # (2) MAKE API CALLS FOR DATA 
     headers = {
         'Authorization': 'Bearer {token}'.format(token=access_token)
     }
     BASE_URL = 'https://api.spotify.com/v1/'
-    ARTIST_ID = '3Nrfpe0tUJi4K4DXYWgMUX' # BTS' ID
+    ARTIST_ID = '3Nrfpe0tUJi4K4DXYWgMUX' # BTS' SPOTIFY ARTIST ID
 
     # Get all albums for artist
     res = requests.get(BASE_URL + 'artists/{id}/albums'.format(id=ARTIST_ID), 
@@ -47,13 +51,13 @@ def get_data():
         print("Error when trying to retrieve albums")
         raise
 
-    albums_to_exclude = ['Skool Luv Affair (Special Edition)', 'Wake Up (Standard Edition)', 'Youth', 'FACE YOURSELF', 'MAP OF THE SOUL : 7 ~ THE JOURNEY ~']
     data = []
     # Get tracks in each album
     for album in res.json()['items']:
-        if album['name'] in albums_to_exclude:
+        if album['name'] in ALBUMS_TO_EXCLUDE:
             # Only want Korean albums - not Japanese or special editions
             continue
+
         album_info = requests.get(BASE_URL + 'albums/{id}'.format(id=album['id']), headers=headers)
         try:
             album_info.raise_for_status()
@@ -63,8 +67,8 @@ def get_data():
         album_info = album_info.json()
 
         for track in album_info['tracks']['items']:
+            # Skip over skits
             if track['name'].lower().find('skit') != -1:
-                # skip over skits, get only music
                 continue
             
             # Get popularity
@@ -85,21 +89,35 @@ def get_data():
                 raise        
             all_details_for_track = audio_features.json()
 
-            # Add extra details for future reference
+            # Get lyrics and sentiment analysis scores
+            lyric_analysis = get_and_analyze_lyrics(text_analytics_client, track['name'], 'bts')
+
+            # Add extra details to access later
             all_details_for_track.update({
                 'track_name': track['name'],
                 'track_popularity': track_info['popularity'],
                 'album_name': album['name'],
                 'album_release_date': album['release_date'],
                 'album_id': album['id'],
-                'album_popularity': album_info['popularity']
+                'album_popularity': album_info['popularity'],
+                'lyrics': lyric_analysis['lyrics'],
+                'document_sentiment': lyric_analysis['document_sentiment'],
+                'pos_score': lyric_analysis['pos_score'],
+                'neg_score': lyric_analysis['neg_score'],
+                'neutral_score': lyric_analysis['neutral_score']
             })
+            print("FINISHED ANALYSING " + track['name'])
             data.append(all_details_for_track)
 
-    # Save data
+    # (3) SAVE DATA AS JSON FILE
     with open(DISCOGRAPHY_FILE_NAME, 'w') as f:
         json.dump(data, f)
 
+"""
+Create and authenticate TextAnalyticsClient as per the following how to: 
+https://docs.microsoft.com/en-us/azure/cognitive-services/text-analytics/quickstarts/text-analytics-sdk?tabs=version-3-1&pivots=programming-language-python
+This will allow us to perform sentiment analysis on Korean text--needed because BTS is a Korean group. 
+"""
 def authenticate_client():
     ta_credential = AzureKeyCredential(os.environ.get('AZURE_KEY'))
     text_analytics_client = TextAnalyticsClient(
@@ -107,46 +125,60 @@ def authenticate_client():
             credential=ta_credential)
     return text_analytics_client
 
-def get_lyrics(client):
+"""
+Get lyrics from MusixMatch API and perform sentiment analysis on it with Microsoft's Text Analytics API. 
+Returns lyrics, overall document (lyric) sentiment, and confidence scores.
+"""
+def get_and_analyze_lyrics(client, song_title, singer):
     BASE_URL = 'https://api.musixmatch.com/ws/1.1/'
     API_KEY = os.environ.get('MUSIXMATCH_KEY')
-    GET_TRACK_BASE_URL = 'matcher.track.get?format=json&callback=callback&q_artist=bts&q_track={song}&apikey={api_key}'.format(song='springday', api_key=API_KEY)
 
-    q_track = 'q_track=dynamite'
-    res = requests.get(BASE_URL + GET_TRACK_BASE_URL)
-    data = res.json()
-    id = data['message']['body']['track']['commontrack_id']
-    #print(data['message']['body']['track']['commontrack_id'])
-
-    GET_LYRICS_URL = 'matcher.lyrics.get?format=json&callback=callback&q_artist=bts&q_track={song}&apikey={api_key}'.format(song='truth untold', api_key=API_KEY)
-
+    # Must take into account that BTS' 2nd Grade is stored in MusixMatch as 'Second Grade'
+    song_title = 'Second Grade' if (song_title == '2nd Grade') else song_title
+    GET_LYRICS_URL = 'matcher.lyrics.get?format=json&callback=callback&q_artist={artist}&q_track={song}&apikey={api_key}'.format(
+        artist=singer, 
+        song=song_title, 
+        api_key=API_KEY
+    )
     res = requests.get(BASE_URL + GET_LYRICS_URL)
+    invalid_ret = {
+        'lyrics': '',
+        'document_sentiment': '',
+        'pos_score': -1.0,
+        'neg_score': -1.0,
+        'neutral_score': -1.0
+    }
+
+    if len(res.json()['message']['body']) == 0 or res.json()['message']['body']['lyrics']['lyrics_body'] == '':
+        # MusixMatch did not find lyrics - either because it could not find song or the song had no lyrics (instrumental only) 
+        return invalid_ret
+    
+    # Found valid lyrics - format it by removing unnecessary breaks + warning at end
     lyrics = res.json()['message']['body']['lyrics']['lyrics_body']
     lyrics = lyrics.replace('\n\n', ' ').replace('\n', ' ')
     lyrics = lyrics[:lyrics.find(' ...')]
-    print(lyrics)
 
-    # https://docs.microsoft.com/en-us/azure/cognitive-services/text-analytics/quickstarts/text-analytics-sdk?tabs=version-3-1&pivots=programming-language-python
+    # Use Microsoft's Text Analytics API to get sentiment analysis of (Korean!) text
     response = client.analyze_sentiment(documents=[lyrics])[0]
-    print("Document Sentiment: {}".format(response.sentiment))
-    print("Overall scores: positive={0:.2f}; neutral={1:.2f}; negative={2:.2f} \n".format(
-        response.confidence_scores.positive,
-        response.confidence_scores.neutral,
-        response.confidence_scores.negative,
-    ))
-    for idx, sentence in enumerate(response.sentences):
-        print("Sentence: {}".format(sentence.text))
-        print("Sentence {} sentiment: {}".format(idx+1, sentence.sentiment))
-        print("Sentence score:\nPositive={0:.2f}\nNeutral={1:.2f}\nNegative={2:.2f}\n".format(
-            sentence.confidence_scores.positive,
-            sentence.confidence_scores.neutral,
-            sentence.confidence_scores.negative,
-        ))
-        print(idx)
+
+    if (response is None) or (not bool(response)):
+        # Was not able to perform sentiment analysis successfully - should technically never be reached as long as lyrics isn't empty
+        invalid_ret['lyrics'] = lyrics
+        return invalid_ret
+    else:
+        ret = {
+            'lyrics': lyrics,
+            'document_sentiment': response.sentiment,
+            'pos_score': response.confidence_scores.positive,
+            'neg_score': response.confidence_scores.negative,
+            'neutral_score': response.confidence_scores.neutral
+        }
+        return ret
 
 if __name__ == "__main__":
     # Uncomment if you need to get discography data first
-    #get_data()
+    # NOTE: The only song that does not have associated sentiment analysis (as of 10/2020) is 'Interlude', because it doesn't have any lyrics
+    # get_data()
 
     # Convert to list of dicts to DataFrame (2D table with labeled axes) 
     df = pd.read_json(DISCOGRAPHY_FILE_NAME)
@@ -156,20 +188,12 @@ if __name__ == "__main__":
     total_songs = 0
     total_albums = 0
     for album in albums:
-        print(album)
+        #print(album)
         total_albums += 1
         tracks = df.loc[df['album_name'] == album]
         total_songs += len(tracks.index)
-        #print(tracks)
+        print(tracks[['track_name', 'document_sentiment', 'pos_score', 'neg_score', 'neutral_score']])
 
     print("There are {} songs".format(total_songs))
 
-    # Use Microsoft Azure's Text Analytics library
-    #client = authenticate_client()
-    #get_lyrics(client)
-    
-    #print(tracks[['track_name', 'danceability', 'valence', 'energy']])
-    #audio_features_df = (df.ix['MAP OF THE SOUL : 7 ~ THE JOURNEY ~'])[['danceability', 'energy', 'track_name']]
-    #audio_features_df = df.loc[[df['album_name'] == 'MAP OF THE SOUL : 7 ~ THE JOURNEY ~'], ['danceability', 'energy', 'track_name']]
-    #print(audio_features_df)
 
