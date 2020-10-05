@@ -10,8 +10,8 @@ ALBUMS_TO_EXCLUDE = ['Skool Luv Affair (Special Edition)', 'Wake Up (Standard Ed
 
 """
 Gets all of an artists' songs and other data (audio features, associated album info) using Spotify's API and stores JSON result
-in a file. Must register at Spotify for Developers first for it to work properly because you all API calls need a valid client id and client secret.
-Used following article as a starting point: https://stmorse.github.io/journal/spotify-api.html
+in a file. Must register at Spotify for Developers, Microsoft Azure and MusixMatch first for it to work properly as stated in the README.
+Used following article as a starting point for getting data into dataframe: https://stmorse.github.io/journal/spotify-api.html
 """
 def get_data():
     # (1) SET UP CLIENT & GET ACCESS TOKEN
@@ -184,15 +184,22 @@ if __name__ == "__main__":
     df = pd.read_json(DISCOGRAPHY_FILE_NAME)
     albums = df.album_name.unique()
 
-    audio_feature_titles = ['acousticness', 'danceability', 'energy', 'instrumentalness', 'liveness', 'loudness', 'speechiness', 'valence', 'tempo']
+    audio_feature_titles = ['track_name', 'acousticness', 'danceability', 'energy', 'instrumentalness', 'liveness', 'loudness', 'speechiness', 'valence', 'tempo']
     total_songs = 0
     total_albums = 0
     for album in albums:
-        #print(album)
+        print(album)
         total_albums += 1
+        # get all rows for one album at a time
         tracks = df.loc[df['album_name'] == album]
+        audio_feature_cols = tracks[audio_feature_titles]
+        print(audio_feature_cols)
+
+        # find average of each column (audio feature)
+        print(audio_feature_cols.mean(axis=0))
         total_songs += len(tracks.index)
-        print(tracks[['track_name', 'document_sentiment', 'pos_score', 'neg_score', 'neutral_score']])
+        #print(tracks[['track_name', 'document_sentiment', 'pos_score', 'neg_score', 'neutral_score']])
+        break
 
     print("There are {} songs".format(total_songs))
 

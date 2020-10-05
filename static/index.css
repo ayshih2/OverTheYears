@@ -1,0 +1,63 @@
+:root {
+  --story-fade-in-style: fadeIn ease 2s;
+}
+
+html, body {
+  font-family: 'Tiempos Text Web', Georgia, Times, serif;
+  background-color: #e4d2e4;
+  height: 100%;
+}
+
+#title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-content: flex-start;
+  height: 100vh;
+}
+
+#title-text {
+  text-align: center;
+  width: 100vw;
+  margin: 0px;
+  padding: 0px;
+}
+
+.fade-in {
+  animation: var(--story-fade-in-style);
+  -webkit-animation: var(--story-fade-in-style);
+  -moz-animation: var(--story-fade-in-style);
+  -o-animation: var(--story-fade-in-style);
+  -ms-animation: var(--story-fade-in-style);
+}
+
+@keyframes fadeIn {
+  0% {opacity:0;}
+  100% {opacity:1;}
+}
+  
+@-moz-keyframes fadeIn {
+  0% {opacity:0;}
+  100% {opacity:1;}
+}
+  
+@-webkit-keyframes fadeIn {
+  0% {opacity:0;}
+  100% {opacity:1;}
+}
+  
+@-o-keyframes fadeIn {
+  0% {opacity:0;}
+  100% {opacity:1;}
+}
+  
+@-ms-keyframes fadeIn {
+  0% {opacity:0;}
+  100% {opacity:1;}
+}
+
+#story {
+  width: 80%;
+  display: none;
+}
+
