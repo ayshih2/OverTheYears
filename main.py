@@ -1,10 +1,12 @@
 from azure.ai.textanalytics import TextAnalyticsClient
 from azure.core.credentials import AzureKeyCredential
+from flask import Flask, jsonify, request, render_template
 import pandas as pd
 import requests
 import json
 import os
 
+app = Flask(__name__)
 DISCOGRAPHY_FILE_NAME = 'bts_songs.json'
 ALBUMS_TO_EXCLUDE = ['Skool Luv Affair (Special Edition)', 'Wake Up (Standard Edition)', 'Youth', 'FACE YOURSELF', 'MAP OF THE SOUL : 7 ~ THE JOURNEY ~']
 
@@ -175,6 +177,19 @@ def get_and_analyze_lyrics(client, song_title, singer):
         }
         return ret
 
+@app.route('/')
+def index():
+    hello = "hello world"
+    return render_template('index.html', end="this is the end!")
+
+@app.route('/albm_avg_data', methods=['GET'])
+def get_album_aft_averages():
+    #results = "testing 1, 2, 3 euphoria"
+    #return jsonify(results)
+    df = pd.read_json(DISCOGRAPHY_FILE_NAME)
+    # to_json() renders a json string so you need to wrap it in json.loads() to get the actual json object
+    return json.loads(df.to_json())
+
 if __name__ == "__main__":
     # Uncomment if you need to get discography data first
     # NOTE: The only song that does not have associated sentiment analysis (as of 10/2020) is 'Interlude', because it doesn't have any lyrics
@@ -183,24 +198,35 @@ if __name__ == "__main__":
     # Convert to list of dicts to DataFrame (2D table with labeled axes) 
     df = pd.read_json(DISCOGRAPHY_FILE_NAME)
     albums = df.album_name.unique()
+    print(list(df.columns))
 
-    audio_feature_titles = ['track_name', 'acousticness', 'danceability', 'energy', 'instrumentalness', 'liveness', 'loudness', 'speechiness', 'valence', 'tempo']
+    audio_feature_titles = ['acousticness', 'danceability', 'energy', 'instrumentalness', 'liveness', 'loudness', 'speechiness', 'valence', 'tempo']
     total_songs = 0
-    total_albums = 0
-    for album in albums:
-        print(album)
+    total_albums = 0    
+
+    print(df[['album_name', 'album_release_date']])
+
+    # calculate average of audio features for each group of rows (aka each album) - as_index=False gives df instead of series
+    temp = df.groupby(['album_name', 'album_release_date'], as_index=False)[audio_feature_titles].mean()
+    temp = temp.sort_values(by='album_name')
+    print(temp)
+
+    """for album in albums:
+        #print(album)
         total_albums += 1
         # get all rows for one album at a time
         tracks = df.loc[df['album_name'] == album]
         audio_feature_cols = tracks[audio_feature_titles]
-        print(audio_feature_cols)
+        #print(audio_feature_cols)
 
         # find average of each column (audio feature)
         print(audio_feature_cols.mean(axis=0))
         total_songs += len(tracks.index)
         #print(tracks[['track_name', 'document_sentiment', 'pos_score', 'neg_score', 'neutral_score']])
-        break
+        break"""
 
     print("There are {} songs".format(total_songs))
+
+    #    app.run("0.0.0.0", "5010")
 
 

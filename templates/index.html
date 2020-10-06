@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Over the Years</title>
-    <link rel="stylesheet" href="../static/index.css" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='../static/index.css') }}" />
   </head>
   <body>
     <div id="content">
@@ -22,23 +22,47 @@
             like Aldus PageMaker including versions of Lorem Ipsum.</p>
         </div>
 
-        <!-- sticky graphic -->
-        <figure class='sticky'>
-          <!-- chart stuff in here -->
-          <img src="https://via.placeholder.com/150" alt="" />
-        </figure>
-
-        <!-- step text -->
-        <article>
-          <div class='step' data-index='0'>
-            <p>Step text</p>
+        <section id='scrolly-side'>
+  
+          <div class='scrolly'>
+            
+            <!--  step text   -->
+            <article>
+              <div class='step' data-width='10%' data-index='0'>
+                  <p>Bar is 10%</p>
+              </div>
+              <div class='step' data-width='90%' data-index='1'>
+                 <p>Bar is 90%</p>
+              </div>
+              <div class='step' data-width='50%' data-index='2'>
+                <p>Bar is 50%</p>
+              </div>
+            </article>
+            
+             <!--  sticky graphic   -->
+            <figure class='sticky'>
+              <div class='bar-outer'>
+                <div class='bar-inner'></div>
+              </div>
+            </figure>
+            
           </div>
-          <!-- ...more steps -->
-        </article>
+          
+        </section>
+
+        <section class='filler'>
+          <p>
+            {{ end }}
+          </p>
+        </section>
       </div>
     </div>
 
+    <script src="https://d3js.org/d3.v6.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/typeit@7.0.4/dist/typeit.min.js"></script>
+    <script src="https://unpkg.com/intersection-observer"></script>
+    <script src="https://unpkg.com/enter-view"></script>
+    <script src="../static/stickyfill.min.js"></script>
     <script src="../static/script.js"></script>
   </body>
 </html>
