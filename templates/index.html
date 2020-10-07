@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Over the Years</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='../static/index.css') }}" />
+    <!--{{ url_for('static', filename='../static/index.css') }}-->
+    <link rel="stylesheet" href="../static/index.css" />
   </head>
   <body>
     <div id="content">
@@ -14,52 +15,93 @@
 
       <div id="story">
         <div id="intro">
-          <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. 
-            Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a 
-            galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also 
-            the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the 
-            release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software 
-            like Aldus PageMaker including versions of Lorem Ipsum.</p>
+          <p>Inspired by <a href="https://pudding.cool">The Pudding</a>, here is a data driven analysis of the discography of one of the biggest global artists in the world: BTS. A short introduction
+            for those unaware: BTS, or Bangtan Sonyeondan (방탄소년단), is a South Korean boy group who debuted under BigHit Entertainment in 2013 with the album
+            <em>2 Cool 4 Skool</em>. The group consists of seven members: RM (Kim Namjoon), Jin (Kim Seokjin), Suga (Min Yoongi), j-hope (Jung Hoseok), 
+            Jimin (Park Jimin), V (Kim Taehyung), and Jungkook (Jeon Jungkook). Since their debut, they've released BLANK albums (? of which are Korean albums while
+            ? are Japanese albums) and have experience exponential growth with each release. Their first breakthrough was with the single I Need U in Korea while
+            they've been making waves in the US ever since the release of DNA. 
+            <br><br>
+            They're undoubtably the biggest musical group in the world right now, trailblazers in the music industry, and along with the fame comes the 
+            inevitable question: what makes them so popular? The answer is simpler than you think: their music. 
+            <br><br>
+            There are numerous reasons why music resonates with others, but here are some of the insights backed by data. We'll be primarily looking at data
+            from three sources: Spotify (for the audio features), MusixMatch (for the lyrics), and Microsoft Azure (to perform sentiment analysis on
+            the Korean lyrics). Is it your first time with BTS? 
+            Let's dive into BTS' discography and analyze how it has changed <b>over the years</b>!
+          </p>
         </div>
 
         <section id='scrolly-side'>
-  
           <div class='scrolly'>
-            
             <!--  step text   -->
             <article>
-              <div class='step' data-width='10%' data-index='0'>
-                  <p>Bar is 10%</p>
+              <div class='step' data-index='0'>
+                  <p>Here is every BTS song separated by album and graphed according to
+                    the overall pitch of the track (an estimation provided by Spotify).
+                    You can click on the legend at the top to exclude any pitch from the graph; to undo
+                    the change, just click on it again.
+                  </p>
               </div>
-              <div class='step' data-width='90%' data-index='1'>
-                 <p>Bar is 90%</p>
+              <div class='step' data-index='1'>
+                 <p>Cool, right? So what does this mean? Not a lot, to be honest. Pitches in isolation don't
+                   particularly tell you anything about a track's emotions; however, the <em>modality</em>,
+                   whether a key is in major or minor, does! 
+                 </p>
               </div>
-              <div class='step' data-width='50%' data-index='2'>
-                <p>Bar is 50%</p>
+              <div class='step' data-index='2'>
+                <p>Along with separating tracks by album, now let's separate them by
+                  major or minor key.
+                </p>
               </div>
+              <div class='step' data-index='2'>
+                <p>Along with separating tracks by album, now let's separate them by
+                  major or minor key.
+                </p>
+              </div>
+              <div class='step' data-index='2'>
+                <p>More analysis here lol
+                </p>
+              </div>              
             </article>
-            
-             <!--  sticky graphic   -->
-            <figure class='sticky'>
-              <div class='bar-outer'>
-                <div class='bar-inner'></div>
-              </div>
+
+            <figure class="sticky">
+              <canvas class="key-chart" width="400" height="400"></canvas>
             </figure>
-            
           </div>
           
         </section>
 
+        <article>
+          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec interdum tellus felis, at lobortis orci sollicitudin ac. Donec lobortis sapien ac posuere faucibus. Mauris lectus neque, pretium non volutpat eget, vestibulum at magna. In sollicitudin augue nunc, non bibendum augue ornare quis.</p>
+          
+          <p>Integer accumsan interdum justo eu pretium. Aliquam maximus mi sit amet dapibus efficitur.</p>
+          
+          <p>Sed condimentum lacus sit amet turpis aliquam varius nec a lacus. In facilisis convallis ante sit amet consequat. Aenean a lorem mollis, bibendum nibh nec, maximus orci. Nulla facilisi.</p>
+        </article>
+
+        <div id="duration-analysis">
+          <div class="album-type-filters">
+            <div class="album-type-filter active">ALL</div>
+            <div class="album-type-filter">MINI-ALBUMS</div>
+            <div class="album-type-filter">FULL-LENGTH ALBUMS</div>
+          </div>
+        </div>
+
         <section class='filler'>
           <p>
-            {{ end }}
+            End
           </p>
         </section>
+
+
       </div>
     </div>
 
     <script src="https://d3js.org/d3.v6.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/typeit@7.0.4/dist/typeit.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.js"></script>
     <script src="https://unpkg.com/intersection-observer"></script>
     <script src="https://unpkg.com/enter-view"></script>
     <script src="../static/stickyfill.min.js"></script>

@@ -9,6 +9,20 @@ import os
 app = Flask(__name__)
 DISCOGRAPHY_FILE_NAME = 'bts_songs.json'
 ALBUMS_TO_EXCLUDE = ['Skool Luv Affair (Special Edition)', 'Wake Up (Standard Edition)', 'Youth', 'FACE YOURSELF', 'MAP OF THE SOUL : 7 ~ THE JOURNEY ~']
+PITCH_CLASSES = {
+  0: "C",
+  1: "C#",
+  2: "D",
+  3: "D#",
+  4: "E",
+  5: "F",
+  6: "F#",
+  7: "G",
+  8: "G#",
+  9: "A",
+  10: "A#",
+  11: "B"
+}
 
 """
 Gets all of an artists' songs and other data (audio features, associated album info) using Spotify's API and stores JSON result
@@ -184,11 +198,71 @@ def index():
 
 @app.route('/albm_avg_data', methods=['GET'])
 def get_album_aft_averages():
-    #results = "testing 1, 2, 3 euphoria"
-    #return jsonify(results)
     df = pd.read_json(DISCOGRAPHY_FILE_NAME)
     # to_json() renders a json string so you need to wrap it in json.loads() to get the actual json object
     return json.loads(df.to_json())
+
+@app.route('/basic_info', methods=['GET'])
+def get_basic_info():
+    df = pd.read_json(DISCOGRAPHY_FILE_NAME)
+    albums = df.album_name.unique()
+    # to_json() renders a json string so you need to wrap it in json.loads() to get the actual json object
+    return json.loads(albums)
+
+@app.route('/key_changes', methods=['GET'])
+def get_key_changes():
+    df = pd.read_json(DISCOGRAPHY_FILE_NAME)
+    albums = df.album_name.unique().tolist()
+    ret = {}
+    ret['album_name'] = albums
+
+    df = df[['track_name', 'album_name', 'album_release_date', 'key', 'mode']]
+    temp = df.loc[df['album_name'] == 'MAP OF THE SOUL : 7']
+    print(temp)
+    for album in albums:
+        # get all rows of songs that belong to one album
+        curr = df.loc[df['album_name'] == album]
+        for pitch in PITCH_CLASSES:
+            num_songs_with_pitch = int(curr[curr['key'] == pitch].count()['key'])
+            if pitch not in ret:
+                ret[pitch] = [num_songs_with_pitch]
+            else:
+                ret[pitch].append(num_songs_with_pitch)
+    print(ret)
+    return json.dumps(ret)
+
+@app.route('/mode_changes', methods=['GET'])
+def get_mode_changes():
+    df = pd.read_json(DISCOGRAPHY_FILE_NAME)
+    albums = df.album_name.unique().tolist()
+    ret = {}
+    ret['album_name'] = albums
+
+    df = df[['track_name', 'album_name', 'album_release_date', 'key', 'mode']]
+    temp = df.loc[df['album_name'] == 'MAP OF THE SOUL : 7']
+    for album in albums:
+        # get all rows of songs that belong to one album
+        curr = df.loc[df['album_name'] == album]
+        total_num_songs = len(curr.index)
+        
+        # minor - 0, major - 1
+        num_songs_in_major = curr[curr['mode'] == 1].count()['mode']
+        if 'tracks_in_major_key' not in ret:
+            ret['tracks_in_major_key'] = [num_songs_in_major]
+            ret['tracks_in_minor_key'] = [total_num_songs - num_songs_in_major]
+        else:
+            ret['tracks_in_major_key'].append(num_songs_in_major)
+            ret['tracks_in_minor_key'].append(total_num_songs - num_songs_in_major)
+
+        # add up number of songs with each pitch for each album
+        for pitch in PITCH_CLASSES:
+            num_songs_with_pitch = curr[curr['key'] == pitch].count()['key']
+            if pitch not in ret:
+                ret[pitch] = [num_songs_with_pitch]
+            else:
+                ret[pitch].append(num_songs_with_pitch)
+    print(ret)
+    return json.dumps(ret)    
 
 if __name__ == "__main__":
     # Uncomment if you need to get discography data first
@@ -197,35 +271,54 @@ if __name__ == "__main__":
 
     # Convert to list of dicts to DataFrame (2D table with labeled axes) 
     df = pd.read_json(DISCOGRAPHY_FILE_NAME)
-    albums = df.album_name.unique()
-    print(list(df.columns))
+    albums = df.album_name.unique().tolist()
+    #print(albums.tolist())
+    #print(list(df.columns))
+    ret = {}
+    ret['album_name'] = albums
 
+    df = df[['track_name', 'album_name', 'album_release_date', 'key', 'mode']]
+    temp = df.loc[df['album_name'] == 'MAP OF THE SOUL : 7']
+    print(temp[['track_name', 'mode']])
+    for album in albums:
+        # get all rows of songs that belong to one album
+        curr = df.loc[df['album_name'] == album]
+        total_num_songs = len(curr.index)
+        
+        print(curr)
+        # if 'tracks_in_major_key' not in ret:
+        #     ret['tracks_in_major_key'] = [num_songs_in_major]
+        #     ret['tracks_in_minor_key'] = [total_num_songs - num_songs_in_major]
+        # else:
+        #     ret['tracks_in_major_key'].append(num_songs_in_major)
+        #     ret['tracks_in_minor_key'].append(total_num_songs - num_songs_in_major)
+        # minor - 0, major - 1
+        num_songs_in_major = curr[curr['mode'] == 1].count()['mode']
+        print("{} songs in major key, {} songs in minor key".format(num_songs_in_major, (total_num_songs - num_songs_in_major)))
+
+        # add up number of songs with each pitch for each album
+        for pitch in PITCH_CLASSES:
+            num_songs_with_pitch = curr[curr['key'] == pitch].count()['key']
+            if pitch not in ret:
+                
+                ret[pitch] = [num_songs_with_pitch]
+            else:
+                ret[pitch].append(num_songs_with_pitch)
+        break
+    print(ret)
+    #print(df.loc[df['album_name'] == 'MAP OF THE SOUL : 7'])
+    
+
+
+    """
     audio_feature_titles = ['acousticness', 'danceability', 'energy', 'instrumentalness', 'liveness', 'loudness', 'speechiness', 'valence', 'tempo']
     total_songs = 0
     total_albums = 0    
 
-    print(df[['album_name', 'album_release_date']])
-
     # calculate average of audio features for each group of rows (aka each album) - as_index=False gives df instead of series
     temp = df.groupby(['album_name', 'album_release_date'], as_index=False)[audio_feature_titles].mean()
-    temp = temp.sort_values(by='album_name')
-    print(temp)
-
-    """for album in albums:
-        #print(album)
-        total_albums += 1
-        # get all rows for one album at a time
-        tracks = df.loc[df['album_name'] == album]
-        audio_feature_cols = tracks[audio_feature_titles]
-        #print(audio_feature_cols)
-
-        # find average of each column (audio feature)
-        print(audio_feature_cols.mean(axis=0))
-        total_songs += len(tracks.index)
-        #print(tracks[['track_name', 'document_sentiment', 'pos_score', 'neg_score', 'neutral_score']])
-        break"""
-
-    print("There are {} songs".format(total_songs))
+    temp = temp.sort_values(by='speechiness')
+    print(temp)"""
 
     #    app.run("0.0.0.0", "5010")
 
