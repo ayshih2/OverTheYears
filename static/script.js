@@ -1,13 +1,3 @@
-// get data to use in chart
-/*var res = fetch('/albm_avg_data')
-  .then((response) => {
-    return response.json();
-  }).then(data => {
-    console.log('GET response as JSON:');
-    console.log(data);
-  }).catch(err => {
-    console.log("Error: " + err)
-  });*/
 /*var ALBUMS = ['MAP OF THE SOUL : 7', 'MAP OF THE SOUL : PERSONA',
 "Love Yourself 結 'Answer'", "Love Yourself 轉 'Tear'",
 "Love Yourself 承 'Her'", 'You Never Walk Alone', 'Wings',
@@ -74,7 +64,6 @@ var pitchClassNotation = {
   11: "B/A𝄪/C♭"
 }
 
-//var pitchColors = ['red', '#ff5349', 'orange', '#FFCC00', 'yellow', '#9acd32', 'green', '#1164b4', 'blue', '#8a2be2', 'purple', 'indigo'];
 var pitchColors = ['rgba(255, 0, 0, 0.6)', 'rgba(255, 83, 73, 0.6)', 'rgba(255, 165, 0, 0.6)', 'rgba(255, 204, 0, 0.6)', 
 'rgba(255, 215, 0, 0.6)', 'rgba(154, 205, 50, 0.6)', 'rgba(0, 128, 0, 0.6)', 'rgba(17, 100, 180, 0.6)', 'rgba(0, 0, 255, 0.6)', 
 'rgba(138, 43, 226, 0.6)', 'rgba(128, 0, 128, 0.6)', 'rgba(75, 0, 130, 0.6)'];
@@ -82,70 +71,133 @@ var borderColors = ['rgba(255, 0, 0, 1)', 'rgba(255, 83, 73, 1)', 'rgba(255, 165
 'rgba(255, 215, 0, 1)', 'rgba(154, 205, 50, 1)', 'rgba(0, 128, 0, 1)', 'rgba(17, 100, 180, 1)', 'rgba(0, 0, 255, 1)', 
 'rgba(138, 43, 226, 1)', 'rgba(128, 0, 128, 1)', 'rgba(75, 0, 130, 1)'];
 
+var chart = null;
+var pitchOnlyConfigs = {}
+var pitchAndModeConfigs = {};
+var hasFetchedPitches = false;
+var hasFetchedModes = false;
+var showingPitchGraph = true;
 graphKeyDist();
 async function graphKeyDist() {
-  var res = await fetch('/key_changes')
-  .then((response) => {
-    return response.json();
-  }).then(res => {
-    console.log('GET response as JSON:');
-    console.log(res);
-    console.log(res[2])
-    //console.log(res.album_name.values())
-    var ctx = document.getElementsByClassName('key-chart')[0].getContext('2d');
-    var dataset = [];
-    Object.keys(pitchClassNotation).forEach(function(key) {
-      dataset.push({
-        label: pitchClassNotation[key],
-        backgroundColor: pitchColors[key],
-        borderColor: borderColors[key],
-        borderWidth: 1,
-        data: res[key]
+  if (!hasFetchedPitches) {
+    // Fetch data from backend if you haven't already
+    var res = await fetch('/key_changes')
+    .then((response) => {
+      return response.json();
+    }).then(res => {
+      var ctx = document.getElementsByClassName('key-chart')[0].getContext('2d');
+      var dataset = []
+      Object.keys(pitchClassNotation).forEach(function(key) {
+        dataset.push({
+          label: pitchClassNotation[key],
+          backgroundColor: pitchColors[key],
+          borderColor: borderColors[key],
+          borderWidth: 1,
+          data: res[key]
+        });
       });
-    });
-    pitchClassNotation.for
-    var myChart = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: ALBUMS,
-        datasets: dataset
-      },
-      options: {
-        scales: {
-          xAxes: [{ stacked: true }],
-          yAxes: [{ stacked: true }]
+      pitchOnlyConfigs = {
+        responsive: true,
+        type: 'bar',
+        data: {
+          labels: ALBUMS,
+          datasets: dataset
+        },
+        options: {
+          scales: {
+            xAxes: [{ stacked: true }],
+            yAxes: [{ 
+              stacked: true,      
+              scaleLabel: {
+                display: true,
+                labelString: 'Number of Songs'
+              }
+            }]
+          }
         }
-      }
+      };
+      chart = new Chart(ctx, pitchOnlyConfigs);
+      hasFetchedPitches = true;
+    }).catch(err => {
+      console.log("Error: " + err)
     });
-  }).catch(err => {
-    console.log("Error: " + err)
-  });
+  }
 }
+
 
 /* STICKY SIDE CARRIAGE SCROLL - Used https://pudding.cool/process/scrollytelling-sticky/ as a guide. */
 const container = d3.select('#scrolly-side');
 const stepSel = container.selectAll('.step');
 
-function updateChart(enter) {
-	// const sel = container.select(`[data-index='${index}']`);
-	// const width = sel.attr('data-width');
-  // stepSel.classed('is-active', (d, i) => i === index);
+/*
+ * Updates the chart based on how many of the information divs about pitch/key the user has scrolled by. Rather than just updating the dataset, the chart 
+ * must be destroyed and reinitialized each time in order for there to be a fluid animation between the two datasets.
+ */
+async function updateChart(enter) {
+  var ctx = document.getElementsByClassName('key-chart')[0].getContext('2d');
   if (enter) {
-    var chart = document.getElementsByClassName('key-chart')[0].getContext('2d');
-    chart.options.scales = {
-      yAxes: [{
-        id: "y-axis-density",
-        stacked: true
-      }, {
-        id: "y-axis-gravity",
-        stacked: true
-      }]
-    };
-    chart.data.labels.push(label);
-    chart.data.datasets.forEach((dataset) => {
-        dataset.data.push(data);
-    });
-    chart.update();    
+    // Get data (pitch and mode of each song from every album) if haven't already
+    showingPitchGraph = false;
+    if (!hasFetchedModes) {
+      var res = await fetch('/mode_changes')
+      .then(response => {
+        return response.json()
+      })
+      .then(res => {
+        console.log(res)
+        var dataset = [];
+        Object.keys(pitchClassNotation).forEach(function(key) {
+          dataset.push({
+            label: pitchClassNotation[key] + " Major",
+            type: "bar",
+            stack: "major",
+            backgroundColor: pitchColors[key],
+            borderColor: borderColors[key],
+            borderWidth: 1,
+            data: res[key]['major']
+          });
+          dataset.push({
+            label: pitchClassNotation[key] + " Minor",
+            type: "bar",
+            stack: "minor",
+            backgroundColor: pattern.draw('zigzag', pitchColors[key]),
+            borderColor: borderColors[key],
+            borderWidth: 1,
+            data: res[key]['minor']
+          });
+        });
+        pitchAndModeConfigs = {
+          responsive: true,
+          type: 'bar',
+          data: {
+            labels: ALBUMS,
+            datasets: dataset
+          },
+          options: {
+            scales: {
+              xAxes: [{ stacked: true }],
+              yAxes: [{ 
+                stacked: true,      
+                scaleLabel: {
+                  display: true,
+                  labelString: 'Number of Songs'
+                }
+              }]
+            }
+          }
+        }
+        hasFetchedModes = true;
+      })
+      .catch(err => {
+        console.log("Error: " + err)
+      });  
+    }
+    chart.destroy();
+    chart = new Chart(ctx, pitchAndModeConfigs);
+  } else {
+    showingPitchGraph = true;
+    chart.destroy();
+    chart = new Chart(ctx, pitchOnlyConfigs);
   }
 }
 
@@ -158,16 +210,19 @@ function init() {
 		enter: el => {
       const index = +d3.select(el).attr('data-index');
       console.log("ENTER INDEX " + index);
-      if (index == 2) {
-        updateChart(True);
+      // Show key chart if it's not already showing
+      if (showingPitchGraph && index == 2) {
+        updateChart(true);
       }
-      
 		},
 		exit: el => {
 			let index = +d3.select(el).attr('data-index');
       index = Math.max(0, index - 1);
       console.log("EXIT INDEX " + index);
-			//updateChart(index);
+      // Go back to original chart if it's not already showing
+      if (!showingPitchGraph && index < 2) {
+        updateChart(false);
+      }
 		}
 	});
 }

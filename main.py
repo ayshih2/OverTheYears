@@ -218,7 +218,7 @@ def get_key_changes():
 
     df = df[['track_name', 'album_name', 'album_release_date', 'key', 'mode']]
     temp = df.loc[df['album_name'] == 'MAP OF THE SOUL : 7']
-    print(temp)
+    #print(temp)
     for album in albums:
         # get all rows of songs that belong to one album
         curr = df.loc[df['album_name'] == album]
@@ -228,39 +228,40 @@ def get_key_changes():
                 ret[pitch] = [num_songs_with_pitch]
             else:
                 ret[pitch].append(num_songs_with_pitch)
-    print(ret)
+    #print(ret)
     return json.dumps(ret)
 
 @app.route('/mode_changes', methods=['GET'])
 def get_mode_changes():
     df = pd.read_json(DISCOGRAPHY_FILE_NAME)
     albums = df.album_name.unique().tolist()
+    #print(albums.tolist())
+    #print(list(df.columns))
     ret = {}
     ret['album_name'] = albums
 
     df = df[['track_name', 'album_name', 'album_release_date', 'key', 'mode']]
     temp = df.loc[df['album_name'] == 'MAP OF THE SOUL : 7']
+    #print(temp[['track_name', 'mode']])
     for album in albums:
         # get all rows of songs that belong to one album
         curr = df.loc[df['album_name'] == album]
         total_num_songs = len(curr.index)
-        
-        # minor - 0, major - 1
         num_songs_in_major = curr[curr['mode'] == 1].count()['mode']
-        if 'tracks_in_major_key' not in ret:
-            ret['tracks_in_major_key'] = [num_songs_in_major]
-            ret['tracks_in_minor_key'] = [total_num_songs - num_songs_in_major]
-        else:
-            ret['tracks_in_major_key'].append(num_songs_in_major)
-            ret['tracks_in_minor_key'].append(total_num_songs - num_songs_in_major)
+        #print("{} songs in major key, {} songs in minor key".format(num_songs_in_major, (total_num_songs - num_songs_in_major)))
 
         # add up number of songs with each pitch for each album
         for pitch in PITCH_CLASSES:
-            num_songs_with_pitch = curr[curr['key'] == pitch].count()['key']
+            songs_in_major_key = int(curr[(curr['key'] == pitch) & (curr['mode'] == 1)].count()['key'])
+            songs_in_minor_key = int(curr[(curr['key'] == pitch) & (curr['mode'] == 0)].count()['key'])
             if pitch not in ret:
-                ret[pitch] = [num_songs_with_pitch]
+                ret[pitch] = {
+                    'major': [songs_in_major_key],
+                    'minor': [songs_in_minor_key]
+                }
             else:
-                ret[pitch].append(num_songs_with_pitch)
+                ret[pitch]['major'].append(songs_in_major_key)
+                ret[pitch]['minor'].append(songs_in_minor_key)
     print(ret)
     return json.dumps(ret)    
 
@@ -274,38 +275,9 @@ if __name__ == "__main__":
     albums = df.album_name.unique().tolist()
     #print(albums.tolist())
     #print(list(df.columns))
-    ret = {}
-    ret['album_name'] = albums
 
-    df = df[['track_name', 'album_name', 'album_release_date', 'key', 'mode']]
-    temp = df.loc[df['album_name'] == 'MAP OF THE SOUL : 7']
-    print(temp[['track_name', 'mode']])
-    for album in albums:
-        # get all rows of songs that belong to one album
-        curr = df.loc[df['album_name'] == album]
-        total_num_songs = len(curr.index)
-        
-        print(curr)
-        # if 'tracks_in_major_key' not in ret:
-        #     ret['tracks_in_major_key'] = [num_songs_in_major]
-        #     ret['tracks_in_minor_key'] = [total_num_songs - num_songs_in_major]
-        # else:
-        #     ret['tracks_in_major_key'].append(num_songs_in_major)
-        #     ret['tracks_in_minor_key'].append(total_num_songs - num_songs_in_major)
-        # minor - 0, major - 1
-        num_songs_in_major = curr[curr['mode'] == 1].count()['mode']
-        print("{} songs in major key, {} songs in minor key".format(num_songs_in_major, (total_num_songs - num_songs_in_major)))
-
-        # add up number of songs with each pitch for each album
-        for pitch in PITCH_CLASSES:
-            num_songs_with_pitch = curr[curr['key'] == pitch].count()['key']
-            if pitch not in ret:
-                
-                ret[pitch] = [num_songs_with_pitch]
-            else:
-                ret[pitch].append(num_songs_with_pitch)
-        break
-    print(ret)
+    get_mode_changes()
+    
     #print(df.loc[df['album_name'] == 'MAP OF THE SOUL : 7'])
     
 
