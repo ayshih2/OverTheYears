@@ -76,11 +76,24 @@ html, body {
   display: none;
 }
 
-#intro {
+.center-div {
   max-width: 40rem;
   margin: 0 auto;
   padding: 0 1em;
   font-size: medium;
+}
+
+#speechiness-analysis {
+  max-width: 54rem;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-around;
+  flex-direction: column;
+}
+
+#speechiness-analysis .speechiness-chart {
+  width: 400px;
+  height: 400px;
 }
 
 /* SONG DURATION */
@@ -110,7 +123,7 @@ html, body {
 }
 
 /* SIDE CARRIAGE FORMAT ( Reference: https://pudding.cool/process/scrollytelling-sticky/ )*/
-#scrolly-side .scrolly {
+/* #scrolly-side .scrolly {
   display: -webkit-box;
   display: flex;
   max-width: 60rem;
@@ -157,4 +170,78 @@ html, body {
   margin: 0;
   top: 25vh;
   left: 0;
+} */
+
+
+#scrolly-overlay .scrolly {
+  max-width: 60rem;
+  margin: 3rem auto;
+  padding: 1rem;
+}
+#scrolly-overlay .scrolly article {
+  padding: 0;
+  max-width: 30rem;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+#scrolly-overlay .scrolly article .step {
+  min-height: 67vh;
+  margin-bottom: 1rem;
+}
+#scrolly-overlay .scrolly article .step:last-of-type {
+  margin-bottom: 0;
+}
+#scrolly-overlay .scrolly article .step.is-active p {
+  background-color: #008080;
+}
+#scrolly-overlay .scrolly article .step p {
+  margin: 0;
+  padding: 1rem;
+  text-align: center;
+  font-weight: 400;
+  background-color: var(--soft-purple);
+  border: 1px solid var(--dark-purple);
+  border-radius: 5px;
+  /* -webkit-transition: background-color 250ms ease-in-out;
+  transition: background-color 250ms ease-in-out; */
+}
+#scrolly-overlay .scrolly figure.sticky {
+  position: -webkit-sticky;
+  position: sticky;
+  width: 100%;
+  /*height: 50vh;*/
+  margin: 0;
+  top: 7vh;
+  left: 0;
+}
+
+#album-overview {
+  display: flex;
+  flex-wrap: wrap;
+  /* flex-direction: column;
+  justify-content: space-between;
+  align-content: space-around; */
+  /*height: 50vh;*/
+  max-width: 40rem;
+  margin: 0 auto;
+}
+
+#album-overview img {
+  /*flex: 50%;*/
+  padding: 5px;
+  width: 150px;
+  height: 150px;
+  flex-grow: 1;
+  /*filter: gray;*/ /* IE6-9 */
+  -webkit-filter: grayscale(1); /* Google Chrome, Safari 6+ & Opera 15+ */
+  filter: grayscale(1); /* Microsoft Edge and Firefox 35+ */
+  -webkit-transform: translate3d(0,0,0); /* needed to prevent flickering */
+}
+
+#album-overview img:nth-last-child(-n+2) {
+  /*flex: 50%;*/
+  width: 300px;
+  height: 300px;
+  flex-grow: 1;
 }

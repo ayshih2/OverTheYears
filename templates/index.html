@@ -14,7 +14,7 @@
       </div>
 
       <div id="story">
-        <div id="intro">
+        <div id="intro" class="center-div">
           <p>Inspired by <a href="https://pudding.cool">The Pudding</a>, here is a data driven analysis of the discography of one of the biggest global artists in the world: BTS. A short introduction
             for those unaware: BTS, or Bangtan Sonyeondan (방탄소년단), is a South Korean boy group who debuted under BigHit Entertainment in 2013 with the album
             <em>2 Cool 4 Skool</em>. The group consists of seven members: RM (Kim Namjoon), Jin (Kim Seokjin), Suga (Min Yoongi), j-hope (Jung Hoseok), 
@@ -32,46 +32,68 @@
           </p>
         </div>
 
-        <section id='scrolly-side'>
+        <section id='scrolly-overlay'>
           <div class='scrolly'>
+
+            <figure class="sticky">
+              <!--<canvas class="key-chart" width="400" height="400"></canvas>-->
+              <div id="album-overview">
+                <img class="school-series" src="../static/images/2cool4skool.jpg">
+                <img class="school-series" src="../static/images/orul82.jpg">
+                <img class="school-series" src="../static/images/skool_luv_affair.jpg">
+                <img class="school-series" src="../static/images/dark&wild.jpg">
+                <img class="hyyh-series" src="../static/images/hyyh_pt1.jpg">
+                <img class="hyyh-series" src="../static/images/hyyh_pt2.jpg">
+                <img class="hyyh-series" src="../static/images/hyyh_yf.jpg">
+                <img class="wings-series" src="../static/images/wings.jpg">   
+                <img class="wings-series" src="../static/images/you_never_walk_alone.jpg">
+                <img class="ly-series" src="../static/images/ly_her.jpg">
+                <img class="ly-series" src="../static/images/ly_tear.jpg">
+                <img class="ly-series" src="../static/images/ly_answer.jpg">    
+                <img class="mots-series" src="../static/images/mots_persona.jpg">
+                <img class="mots-series" src="../static/images/mots_7.jpg">                    
+              </div>              
+            </figure> 
+                      
             <!--  step text   -->
             <article>
-              <div class='step' data-index='0'>
-                  <p>Here is every BTS song separated by album and graphed according to
-                    the overall pitch of the track (an estimation provided by Spotify).
-                    You can click on the legend at the top to exclude any pitch from the graph; to undo
-                    the change, just click on it again.
+              <div class='step school-series'>
+                  <p>Start with the School Series.
                   </p>
               </div>
-              <div class='step' data-index='1'>
-                 <p>Cool, right? So what does this mean? Not a lot, to be honest. Pitches in isolation don't
-                   particularly tell you anything about a track's emotions; however, the <em>modality</em>,
-                   whether a key is in major or minor, does! 
+              <div class='step hyyh-series'>
+                 <p>Next is HYYH.
                  </p>
               </div>
-              <div class='step' data-index='2'>
+              <div class='step wings-series'>
                 <p>Along with separating tracks by album, now let's separate them by
                   major or minor key.
                 </p>
               </div>
-              <div class='step' data-index='3'>
+              <div class='step ly-series'>
                 <p>Though it varies from person to person, certain keys elict certain
                   emotions from people; songs written in minor keys are often linked to be
                   more negative emotions while the opposite is true for major keys. 
                 </p>
               </div>
-              <div class='step' data-index='4'>
+              <div class='step mots-series'>
                 <p>More analysis here lol
                 </p>
-              </div>              
+              </div>                
             </article>
-
-            <figure class="sticky">
-              <canvas class="key-chart" width="400" height="400"></canvas>
-            </figure>
           </div>
-          
         </section>
+
+        <div id="speechiness-analysis">
+          <canvas class="speechiness-chart"></canvas>
+          <p>Speechiness is an audio feature provided by Spotify whose value ranges from 0.0 to 1.0, where the higher the value, the more
+            spoken words is detected in the track. You can tell how this correlates with BTS' change in sound--from their earlier tracks having more of a 
+            hip hop influence while their current tracks are more pop inspired. Spotify describes values between 0.33 - 0.66 as tracks that contain both
+            speech and music--such as rap songs.
+
+            The peak in MOTS : Persona is due to it being an EP. Explain more lol.
+          </p>
+        </div>   
 
         <article>
           <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec interdum tellus felis, at lobortis orci sollicitudin ac. Donec lobortis sapien ac posuere faucibus. Mauris lectus neque, pretium non volutpat eget, vestibulum at magna. In sollicitudin augue nunc, non bibendum augue ornare quis.</p>
@@ -101,11 +123,13 @@
 
     <script src="https://d3js.org/d3.v6.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/typeit@7.0.4/dist/typeit.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.js"></script>
+    <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.js"></script>-->
+    <script src="{{ url_for('static', filename='node_modules/chart.js/dist/Chart.js') }}"></script>
+    <script src="{{ url_for('static', filename='node_modules/chartjs-plugin-deferred/dist/chartjs-plugin-deferred.js') }}"></script>
     <script src="https://unpkg.com/intersection-observer"></script>
     <script src="https://unpkg.com/enter-view"></script>
-    <script src="../static/stickyfill.min.js"></script>
+    <!--<script src="../static/stickyfill.min.js"></script>-->
     <script src="https://cdn.jsdelivr.net/npm/patternomaly@1.3.0/dist/patternomaly.min.js"></script>
     <script src="../static/script.js"></script>
   </body>

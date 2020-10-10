@@ -1,8 +1,10 @@
+from numpy.lib.shape_base import split
 from azure.ai.textanalytics import TextAnalyticsClient
 from azure.core.credentials import AzureKeyCredential
 from flask import Flask, jsonify, request, render_template
 import pandas as pd
 import requests
+import uuid
 import json
 import os
 
@@ -209,6 +211,14 @@ def get_basic_info():
     # to_json() renders a json string so you need to wrap it in json.loads() to get the actual json object
     return json.loads(albums)
 
+@app.route('/popularity', methods=['GET'])
+def get_popularity():
+    df = pd.read_json(DISCOGRAPHY_FILE_NAME)
+    albums = df.album_name.unique()
+    # to_json() renders a json string so you need to wrap it in json.loads() to get the actual json object
+    print(df[['track_name', 'album_name', 'track_popularity']])
+    return json.loads(albums)    
+
 @app.route('/key_changes', methods=['GET'])
 def get_key_changes():
     df = pd.read_json(DISCOGRAPHY_FILE_NAME)
@@ -262,24 +272,39 @@ def get_mode_changes():
             else:
                 ret[pitch]['major'].append(songs_in_major_key)
                 ret[pitch]['minor'].append(songs_in_minor_key)
-    print(ret)
+    #print(ret)
     return json.dumps(ret)    
+
+@app.route('/speechiness', methods=['GET'])
+def get_speechiness():
+    df = pd.read_json(DISCOGRAPHY_FILE_NAME)
+    albums = df.album_name.unique().tolist()
+    #print(albums.tolist())
+    print(list(df.columns))
+    speechiness_df = df[['track_name', 'album_name', 'album_release_date', 'speechiness']]
+    speechiness_df = speechiness_df.groupby(['album_name', 'album_release_date'], as_index=False)
+    speechiness_df = speechiness_df['speechiness'].mean().round(3).sort_values('album_release_date')
+    print(speechiness_df)
+    ret = {}
+    for album, speechiness in zip(speechiness_df['album_name'], speechiness_df['speechiness']):
+        ret[album] = speechiness
+    print(ret)
+    return json.dumps(ret)
 
 if __name__ == "__main__":
     # Uncomment if you need to get discography data first
     # NOTE: The only song that does not have associated sentiment analysis (as of 10/2020) is 'Interlude', because it doesn't have any lyrics
     # get_data()
-
-    # Convert to list of dicts to DataFrame (2D table with labeled axes) 
     df = pd.read_json(DISCOGRAPHY_FILE_NAME)
-    albums = df.album_name.unique().tolist()
-    #print(albums.tolist())
-    #print(list(df.columns))
-
-    get_mode_changes()
+    # Convert to list of dicts to DataFrame (2D table with labeled axes) 
+    print(list(df.columns))
+    #get_popularity()
+    #print(df.head()[['track_name', 'lyrics']])
+    print(df[df['track_name'] == 'Jamais Vu']['lyrics'][3])
+    #get_mode_changes()
     
     #print(df.loc[df['album_name'] == 'MAP OF THE SOUL : 7'])
-    
+    # translator? https://docs.microsoft.com/en-us/azure/cognitive-services/translator/quickstart-translator?tabs=python#transliterate-text
 
 
     """

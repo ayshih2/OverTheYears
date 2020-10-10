@@ -1,16 +1,10 @@
-/*var ALBUMS = ['MAP OF THE SOUL : 7', 'MAP OF THE SOUL : PERSONA',
-"Love Yourself 結 'Answer'", "Love Yourself 轉 'Tear'",
-"Love Yourself 承 'Her'", 'You Never Walk Alone', 'Wings',
-'The Most Beautiful Moment in Life: Young Forever',
-'The Most Beautiful Moment in Life Pt.2',
-'The Most Beautiful Moment in Life Pt.1', 'Dark & Wild', 'Skool Luv Affair',
-'O!RUL8,2?', '2 Cool 4 Skool'];*/
+var ALBUMS_FULL_NAME = ['2 Cool 4 Skool', 'O!RUL8,2?', 'Skool Luv Affair', 'Dark & Wild', 'The Most Beautiful Moment in Life Pt.1', 
+'The Most Beautiful Moment in Life Pt.2', 'The Most Beautiful Moment in Life: Young Forever', 'Wings', 'You Never Walk Alone', 
+"Love Yourself 承 'Her'", "Love Yourself 轉 'Tear'", "Love Yourself 結 'Answer'", 'MAP OF THE SOUL : PERSONA', 'MAP OF THE SOUL : 7']
 
-var ALBUMS = ['MOTS : 7', 'MOTS : PERSONA',
-"LY 結 'Answer'", "LY 轉 'Tear'",
-"LY 承 'Her'", 'You Never Walk Alone', 'Wings',
-'HYYH: Young Forever', 'HYYH Pt.2','HYYH Pt.1', 'Dark & Wild', 
-'Skool Luv Affair', 'O!RUL8,2?', '2 Cool 4 Skool'];
+
+var ALBUMS = ['2 Cool 4 Skool', 'O!RUL8,2?', 'Skool Luv Affair', 'Dark & Wild', 'HYYH Pt.1', 'HYYH Pt.2', 'HYYH: Young Forever', 'Wings', 
+'You Never Walk Alone', "LY 承 'Her'", "LY 轉 'Tear'", "LY 結 'Answer'", 'MOTS : PERSONA', 'MOTS : 7']
 
 /* TYPEWRITER EFFECT FOR TITLE - Used https://typeitjs.com to achieve the effect. */
 new TypeIt("#title-text", {
@@ -48,8 +42,82 @@ filters.addEventListener("click", (e) => {
   }
 });
 
+graphSpeechiness()
+function graphSpeechiness() {
+  // Fetch data from backend if you haven't already
+  var res = fetch('/speechiness')
+  .then((response) => {
+    return response.json();
+  }).then(data => {
+    var ctx = document.getElementsByClassName('speechiness-chart')[0].getContext('2d');
+    console.log("SPEECHINESS");
+    console.log(data)
+    var dataset = []
+    console.log("sepech dataset");
+    ALBUMS_FULL_NAME.forEach(album => {
+      dataset.push(data[album]);
+    });
+    console.log(dataset)
+    var chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: ALBUMS,
+        datasets: [{
+          data: dataset,
+          label: 'Speechiness',
+          pointBackgroundColor: 'rgba(85, 26, 139, 0.6)',
+          pointBorderColor: 'rgba(85, 26, 139, 0.6)',
+          borderColor: 'rgba(85, 26, 139, 0.6)',
+          backgroundColor: 'rgba(85, 26, 139, 0.4)',
+        }]
+      },
+      options: {
+        legend: {
+          display: false
+        },
+        scales: {
+          yAxes: [{   
+            scaleLabel: {
+              display: true,
+              labelString: 'Speechiness' 
+            },
+            // ticks: {
+            //   min: 0,
+            //   max: 1
+            // }
+          }]
+        },
+        plugins: {
+          deferred: { 
+            yOffset: '50%', // defer until 50% of the canvas height are inside the viewport
+            delay: 500 
+          }
+        }
+      }
+    });
+  }).catch(err => {
+    console.log("Error: " + err)
+  });
+  
+}
+
 // https://en.wikipedia.org/wiki/Pitch_class
 var pitchClassNotation = {
+  0: "C",
+  1: "C♯",
+  2: "D",
+  3: "D♯",
+  4: "E",
+  5: "F",
+  6: "F♯",
+  7: "G",
+  8: "G♯",
+  9: "A",
+  10: "A♯",
+  11: "B"
+}
+
+/*var pitchClassNotation = {
   0: "C/B♯/D𝄫",
   1: "C♯/D♭/B𝄪",
   2: "D/C𝄪/E𝄫",
@@ -62,7 +130,7 @@ var pitchClassNotation = {
   9: "A/G𝄪/B𝄫",
   10: "A♯/B♭/C𝄫",
   11: "B/A𝄪/C♭"
-}
+}*/
 
 var pitchColors = ['rgba(255, 0, 0, 0.6)', 'rgba(255, 83, 73, 0.6)', 'rgba(255, 165, 0, 0.6)', 'rgba(255, 204, 0, 0.6)', 
 'rgba(255, 215, 0, 0.6)', 'rgba(154, 205, 50, 0.6)', 'rgba(0, 128, 0, 0.6)', 'rgba(17, 100, 180, 0.6)', 'rgba(0, 0, 255, 0.6)', 
@@ -77,7 +145,7 @@ var pitchAndModeConfigs = {};
 var hasFetchedPitches = false;
 var hasFetchedModes = false;
 var showingPitchGraph = true;
-graphKeyDist();
+//graphKeyDist();
 async function graphKeyDist() {
   if (!hasFetchedPitches) {
     // Fetch data from backend if you haven't already
@@ -126,7 +194,7 @@ async function graphKeyDist() {
 
 
 /* STICKY SIDE CARRIAGE SCROLL - Used https://pudding.cool/process/scrollytelling-sticky/ as a guide. */
-const container = d3.select('#scrolly-side');
+const container = d3.select('#scrolly-overlay');
 const stepSel = container.selectAll('.step');
 
 /*
@@ -202,26 +270,37 @@ async function updateChart(enter) {
 }
 
 function init() {
-	Stickyfill.add(d3.select('.sticky').node());
-
 	enterView({
 		selector: stepSel.nodes(),
 		offset: 0.5,
 		enter: el => {
-      const index = +d3.select(el).attr('data-index');
-      console.log("ENTER INDEX " + index);
-      // Show key chart if it's not already showing
-      if (showingPitchGraph && index == 2) {
-        updateChart(true);
-      }
+      console.log(el);
+      const album_series = d3.select(el).attr('class').split(' ')[1];
+      console.log(album_series);
+      console.log(":(")
+      d3.selectAll('#album-overview img')
+      .style('-webkit-filter', 'grayscale(1)')
+      .style('filter', 'grayscale(1)')
+      .style('opacity', '0.3');
+      d3.selectAll(`img.${album_series}`)
+      .style('filter', 'none')
+      .style('transition', 'opacity 0.3s')
+      .style('opacity', '1');
 		},
 		exit: el => {
-			let index = +d3.select(el).attr('data-index');
-      index = Math.max(0, index - 1);
-      console.log("EXIT INDEX " + index);
-      // Go back to original chart if it's not already showing
-      if (!showingPitchGraph && index < 2) {
-        updateChart(false);
+      console.log(el);
+      const album_series = d3.select(el).attr('class').split(' ')[1];
+      console.log("EXIT");
+      console.log(album_series);
+      d3.selectAll('#album-overview img')
+      .style('-webkit-filter', 'grayscale(1)')
+      .style('filter', 'grayscale(1)')
+      .style('opacity', '0.3');
+      if (album_series != 'mots-series') {
+        d3.selectAll(`img.${album_series}`)
+        .style('filter', 'none')
+        .style('transition', 'opacity 0.3s')
+        .style('opacity', '1');
       }
 		}
 	});
